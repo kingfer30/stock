@@ -310,22 +310,12 @@ const lianbanColumns = [
 
 // 行样式设置
 const rowProps = (row) => {
-  const jinjieValue = row['是否晋级']
-  console.log('股票:', row['股票简称'], '是否晋级:', jinjieValue, '类型:', typeof jinjieValue)
-  
-  // 只有当值明确为"是"时才应用绿色背景
-  if (jinjieValue === '是') {
-    console.log('✓ 应用绿色背景')
+  if (row['是否晋级'] === '是') {
     return {
-      style: {
-        backgroundColor: '#f6ffed',
-        transition: 'background-color 0.3s'
-      }
+      class: 'jinjie-row'
     }
   }
-  return {
-    style: {}
-  }
+  return {}
 }
 
 // 获取交易日期
@@ -464,9 +454,7 @@ const loadNextDayJingjiaData = async () => {
           lianbanData.value[i]['次日竞价涨幅(%)'] = response.data.jingjiaZhangfu || ''
           lianbanData.value[i]['次日竞价成交额(亿元)'] = response.data.jingjiaChengjiaoE || ''
           lianbanData.value[i]['次日竞价成交量'] = response.data.jingjiaChengjiaoL || ''
-          const jinjieValue = response.data.shifoujinjie || ''
-          lianbanData.value[i]['是否晋级'] = jinjieValue
-          console.log(`${stockName} 是否晋级更新为:`, jinjieValue)
+          lianbanData.value[i]['是否晋级'] = response.data.shifoujinjie || ''
         } else {
           lianbanData.value[i]['次日竞价涨幅(%)'] = '❌'
           lianbanData.value[i]['次日竞价成交额(亿元)'] = '❌'
@@ -623,6 +611,22 @@ onUnmounted(() => {
 .lianban-controls {
   margin-bottom: 16px;
 }
-</style>
 
+/* 晋级行样式 */
+:deep(.jinjie-row) {
+  background-color: #d9f7be !important;
+}
+
+:deep(.jinjie-row td) {
+  background-color: #d9f7be !important;
+}
+
+:deep(.jinjie-row:hover) {
+  background-color: #b7eb8f !important;
+}
+
+:deep(.jinjie-row:hover td) {
+  background-color: #b7eb8f !important;
+}
+</style>
 
