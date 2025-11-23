@@ -53,9 +53,9 @@ def get_trade_dates():
                 data = response.json()
                 if data.get("status_code") == 0:
                     prev_dates = data["data"]["prev_dates"]
-                    # 格式化日期为 YYYY-MM-DD 显示
+                    # 格式化日期为 YYYY-MM-DD 显示（倒序）
                     formatted_dates = []
-                    for date_str in prev_dates:
+                    for date_str in reversed(prev_dates):
                         try:
                             formatted = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
                             formatted_dates.append({"raw": date_str, "display": formatted})
@@ -104,6 +104,9 @@ def fetch_data(selected_date=None):
                 today = datetime.now().strftime("%Y-%m-%d")
 
             today = today.replace("-", "")
+            
+            # 用于查询的日期：如果选择了日期则用selected_date，否则用today
+            query_date = selected_date if selected_date else today
 
             response = requests.get(
                 "https://ai.iwencai.com/urp/v7/index/robot-index?uuid=23225&query=竞价涨幅低于-7%的同花顺行业且按照竞价涨幅小到大",
@@ -214,13 +217,13 @@ def fetch_data(selected_date=None):
 
             # 获取连板数据
             # 构建查询语句，如果有选择日期则添加日期条件
-            base_query = "连板数大于等于1且非科创板且非st股且包含成交额且包含涨停封单额且包含收盘价且包含成交量且包含最大1分钟成交量且包含次日竞价涨幅且包含次日竞价成交额且包含次日竞价成交量且包含自由流通股且包含自由流通市值且包含实际换手率且包含量比且按连续涨停天数从大到小排序"
             if selected_date:
                 # 格式化日期为YYYY-MM-DD
+                #2025年11月10日涨停且连板数大于等于1且包含涨幅
                 date_formatted = f"{selected_date[:4]}-{selected_date[4:6]}-{selected_date[6:]}"
-                query = f"{date_formatted}连板数大于等于1且非科创板且非st股且包含成交额且包含涨停封单额且包含收盘价且包含成交量且包含最大1分钟成交量且包含次日竞价涨幅且包含次日竞价成交额且包含次日竞价成交量且包含自由流通股且包含自由流通市值且包含实际换手率且包含量比且按连续涨停天数从大到小排序"
+                query = f"非科创板且非st股{date_formatted}涨停且连板数大于等于1且含成交额且含涨停封单额且包含收盘价且包含成交量且包含自由流通股且包含自由流通市值且包含实际换手率且包含量比且{date_formatted}连续涨停天数从大到小排序"
             else:
-                query = base_query
+                query = f"连板数大于等于1且非科创板且非st股且包含成交额且包含涨停封单额且包含收盘价且包含成交量且包含自由流通股且包含自由流通市值且包含实际换手率且包含量比且按连续涨停天数从大到小排序"
             
             # 定义处理单条数据的函数
             def process_lianban_item(item):
@@ -352,6 +355,49 @@ def fetch_data(selected_date=None):
                     if tmp:  # 只有在有数据时才处理
                         for item in tmp:
                             entry = process_lianban_item(item)
+                            
+                            # 获取分时最大成交量（无论是否选择了日期都获取）
+                            try:
+                                stock_name = item.get("股票简称", "")
+                                if stock_name:
+                                    # 格式化日期为x年x月x日
+                                    year = query_date[:4]
+                                    month = query_date[4:6]
+                                    day = query_date[6:]
+                                    date_str = f"{year}年{month}月{day}日"
+                                    
+                                    # 构建查询语句
+                                    max_vol_query = f"{date_str}{stock_name}分时最大成交量"
+                                    
+                                    # 请求分时最大成交量数据
+                                    max_vol_response = requests.get(
+                                        f"https://ai.iwencai.com/urp/v7/index/robot-index?uuid=23225&query={max_vol_query}",
+                                        timeout=15,
+                                        verify=False,
+                                        headers={
+                                            "Host": "ai.iwencai.com",
+                                            "Content-Type": "application/json; charset=utf-8",
+                                            "User-Agent": "lhb/5.17.9 (xxxxx; build:0; iOS 16.6.0) Alamofire/4.9.1",
+                                        },
+                                    )
+                                    
+                                    if max_vol_response.status_code == 200:
+                                        max_vol_json = max_vol_response.json()
+                                        if max_vol_json.get("status_code") == "0":
+                                            max_vol_datas = max_vol_json["answer"]["components"][0]["data"].get("datas", [])
+                                            if max_vol_datas:
+                                                first_item = max_vol_datas[0]
+                                                # 获取"最大一分钟成交量[YYYYMMDD]"字段
+                                                max_vol_field = get_field_by_keyword(first_item, f"最大一分钟成交量[{query_date}]") or get_field_by_keyword(first_item, "最大一分钟成交量")
+                                                if max_vol_field:
+                                                    try:
+                                                        # 格式化为亿为单位
+                                                        entry["最大1分钟成交量"] = f"{float(max_vol_field)/10000:.2f}"
+                                                    except:
+                                                        entry["最大1分钟成交量"] = str(max_vol_field)
+                            except Exception as e:
+                                print(f"获取{item.get('股票简称', '')}分时最大成交量失败: {str(e)}")
+                            
                             连板数据.append(entry)
                     
                     # 检查是否需要分页
@@ -393,6 +439,49 @@ def fetch_data(selected_date=None):
                                         # 处理本页数据
                                         for item in page_datas:
                                             entry = process_lianban_item(item)
+                                            
+                                            # 获取分时最大成交量（无论是否选择了日期都获取）
+                                            try:
+                                                stock_name = item.get("股票简称", "")
+                                                if stock_name:
+                                                    # 格式化日期为x年x月x日
+                                                    year = query_date[:4]
+                                                    month = query_date[4:6]
+                                                    day = query_date[6:]
+                                                    date_str = f"{year}年{month}月{day}日"
+                                                    
+                                                    # 构建查询语句
+                                                    max_vol_query = f"{date_str}{stock_name}分时最大成交量"
+                                                    
+                                                    # 请求分时最大成交量数据
+                                                    max_vol_response = requests.get(
+                                                        f"https://ai.iwencai.com/urp/v7/index/robot-index?uuid=23225&query={max_vol_query}",
+                                                        timeout=15,
+                                                        verify=False,
+                                                        headers={
+                                                            "Host": "ai.iwencai.com",
+                                                            "Content-Type": "application/json; charset=utf-8",
+                                                            "User-Agent": "lhb/5.17.9 (xxxxx; build:0; iOS 16.6.0) Alamofire/4.9.1",
+                                                        },
+                                                    )
+                                                    
+                                                    if max_vol_response.status_code == 200:
+                                                        max_vol_json = max_vol_response.json()
+                                                        if max_vol_json.get("status_code") == "0":
+                                                            max_vol_datas = max_vol_json["answer"]["components"][0]["data"].get("datas", [])
+                                                            if max_vol_datas:
+                                                                first_item = max_vol_datas[0]
+                                                                # 获取"最大一分钟成交量[YYYYMMDD]"字段
+                                                                max_vol_field = get_field_by_keyword(first_item, f"最大一分钟成交量[{query_date}]") or get_field_by_keyword(first_item, "最大一分钟成交量")
+                                                                if max_vol_field:
+                                                                    try:
+                                                                        # 格式化为亿为单位
+                                                                        entry["最大1分钟成交量"] = f"{float(max_vol_field)/10000:.2f}"
+                                                                    except:
+                                                                        entry["最大1分钟成交量"] = str(max_vol_field)
+                                            except Exception as e:
+                                                print(f"获取{item.get('股票简称', '')}分时最大成交量失败: {str(e)}")
+                                            
                                             连板数据.append(entry)
                                         
                                         current_count += len(page_datas)
@@ -624,7 +713,7 @@ def main():
             )
 
     # 数据表格展示
-    tab1, tab2, tab3, tab4 = st.tabs(["📈 竞价涨幅(一进二)", "📉 竞价跌幅", "🏆 连板排行", "🔥 连板数据"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📈 竞价涨幅(一进二)", "📉 竞价跌幅", "🏆 连板排行", "🔥 热门概念", "📊 连板数据"])
 
     with tab1:
         if 竞价涨幅:
@@ -639,7 +728,7 @@ def main():
                     "jjje": "竞价金额",
                     "sjsz": "实际市值",
                 },
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
             )
         else:
@@ -656,7 +745,7 @@ def main():
                     "jjzf": "竞价涨幅",
                     "sjzf": "实际涨幅",
                 },
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
             )
         else:
@@ -674,92 +763,13 @@ def main():
                     "type": "类型",
                     "concept": "概念",
                 },
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
             )
         else:
             st.info("当前无连板数据")
 
     with tab4:
-        #获取交易日期列表（如果还没有获取）
-        if not st.session_state.trade_dates:
-            st.session_state.trade_dates = get_trade_dates()
-            if not st.session_state.trade_dates:
-                st.warning("⚠️ 无法获取历史交易日期列表，仅显示当前交易日数据")
-                
-        
-        # 添加日期选择下拉框 - 始终显示
-        date_options = ["当前交易日"]
-        if st.session_state.trade_dates:
-            date_options += [d["display"] for d in st.session_state.trade_dates]
-        
-        [col_date1]= st.columns([2])
-        with col_date1:
-            selected_display = st.selectbox(
-                "📅 选择查询日期",
-                options=date_options,
-                index=0,
-                key="date_selector"
-            )
-    
-        
-        # 根据选择更新session_state
-        new_selected_date = None
-        if selected_display == "当前交易日":
-            new_selected_date = None
-        else:
-            # 找到对应的原始日期
-            for d in st.session_state.trade_dates:
-                if d["display"] == selected_display:
-                    new_selected_date = d["raw"]
-                    break
-        
-        # 如果日期改变，重新加载页面
-        if new_selected_date != st.session_state.selected_date:
-            st.session_state.selected_date = new_selected_date
-            st.rerun()
-        
-        # 添加分隔线
-        st.markdown("---")
-        
-        # 显示数据
-        data_container = st.container()
-        with data_container:
-            if 连板数据 and len(连板数据) > 0:
-                st.dataframe(
-                    连板数据,
-                    column_config={
-                        "连板数": "连板数",
-                        "股票代码": "代码",
-                        "股票简称": "名称",
-                        "成交额(亿元)": "成交额(亿元)",
-                        "封板资金(亿元)": "封板资金(亿元)",
-                        "收盘价(元)": "收盘价(元)",
-                        "成交量(股)": "成交量(股)",
-                        "最大1分钟成交量": "最大1分钟成交量",
-                        "次日竞价涨幅(%)": "次日竞价涨幅(%)",
-                        "次日竞价成交额(亿元)": "次日竞价成交额(亿元)",
-                        "次日竞价成交量": "次日竞价成交量",
-                        "自由流通股本": "自由流通股本",
-                        "自由流通市值(亿)": "自由流通市值(亿)",
-                        "真实换手率%": "真实换手率%",
-                        "量比": "量比",
-                        "是否晋级": "是否晋级",
-                    },
-                    use_container_width=True,
-                    hide_index=True,
-                )
-            else:
-                st.markdown("""
-            <div style="padding: 2rem; text-align: center; background-color: #fff3cd; border-radius: 0.5rem; border: 1px solid #ffeeba;">
-                <h4 style="color: #856404;">⚠️ 暂无连板数据</h4>
-                <p style="color: #856404;">该日期可能没有符合条件的股票</p>
-                <p style="color: #856404;">💡 提示：请尝试选择其他交易日期或等待市场开盘后查看数据</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # 热门概念展示
-    with st.expander("🔥 热门概念", expanded=True):
         if data["bace_face_list"]:
             for item in data["bace_face_list"]:
                 try:
@@ -801,12 +811,87 @@ def main():
                 )
         else:
             st.warning("暂无热门概念数据")
-            
+
+    with tab5:
+        #获取交易日期列表（如果还没有获取）
+        if not st.session_state.trade_dates:
+            st.session_state.trade_dates = get_trade_dates()
+            if not st.session_state.trade_dates:
+                st.warning("⚠️ 无法获取历史交易日期列表，仅显示当前交易日数据")
+                
+        
+        # 添加日期选择下拉框 - 始终显示
+        date_options = ["当前交易日"]
+        if st.session_state.trade_dates:
+            date_options += [d["display"] for d in st.session_state.trade_dates]
+        
+        [col_date1]= st.columns([1])
+        with col_date1:
+            selected_display = st.selectbox(
+                "📅 选择查询日期",
+                options=date_options,
+                index=0,
+                key="date_selector"
+            )
+    
+        
+        # 根据选择更新session_state
+        new_selected_date = None
+        if selected_display == "当前交易日":
+            new_selected_date = None
+        else:
+            # 找到对应的原始日期
+            for d in st.session_state.trade_dates:
+                if d["display"] == selected_display:
+                    new_selected_date = d["raw"]
+                    break
+        
+        # 如果日期改变，重新加载页面
+        if new_selected_date != st.session_state.selected_date:
+            st.session_state.selected_date = new_selected_date
+            st.rerun()
+        
+        # 显示数据
+        data_container = st.container()
+        with data_container:
+            if 连板数据 and len(连板数据) > 0:
+                st.dataframe(
+                    连板数据,
+                    column_config={
+                        "连板数": "连板数",
+                        "股票代码": "代码",
+                        "股票简称": "名称",
+                        "成交额(亿元)": "成交额(亿元)",
+                        "封板资金(亿元)": "封板资金(亿元)",
+                        "收盘价(元)": "收盘价(元)",
+                        "成交量(股)": "成交量(股)",
+                        "最大1分钟成交量": "最大1分钟成交量(万)",
+                        "次日竞价涨幅(%)": "次日竞价涨幅(%)",
+                        "次日竞价成交额(亿元)": "次日竞价成交额(亿元)",
+                        "次日竞价成交量": "次日竞价成交量",
+                        "自由流通股本": "自由流通股本",
+                        "自由流通市值(亿)": "自由流通市值(亿)",
+                        "真实换手率%": "真实换手率%",
+                        "量比": "量比",
+                        "是否晋级": "是否晋级",
+                    },
+                    width='stretch',
+                    hide_index=True,
+                )
+            else:
+                st.markdown("""
+            <div style="padding: 2rem; text-align: center; background-color: #fff3cd; border-radius: 0.5rem; border: 1px solid #ffeeba;">
+                <h4 style="color: #856404;">⚠️ 暂无连板数据</h4>
+                <p style="color: #856404;">该日期可能没有符合条件的股票</p>
+                <p style="color: #856404;">💡 提示：请尝试选择其他交易日期或等待市场开盘后查看数据</p>
+            </div>
+            """, unsafe_allow_html=True)
+
     with col3:
         if st.session_state.auto_refresh:
             # 显示倒计时
             placeholder = st.empty()
-            for i in range(5, 0, -1):  # 5秒倒计时
+            for i in range(20, 0, -1):  # 5秒倒计时
                 placeholder.text(f"🔄 自动刷新中... {i}秒后更新")
                 time.sleep(1)
             st.rerun()
