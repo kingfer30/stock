@@ -47,6 +47,22 @@ http://localhost:3000
 - **后端端口**: 5000（可在 `backend/app.py` 修改）
 - **前端端口**: 3000（可在 `frontend/vite.config.js` 修改）
 
+## 🔧 环境变量配置
+
+在 `frontend` 目录下创建 `.env` 文件（或复制 `.env.example`）：
+
+```bash
+# 自动刷新间隔时间（秒），默认20秒
+VITE_AUTO_REFRESH_INTERVAL=20
+```
+
+**可配置项：**
+- `VITE_AUTO_REFRESH_INTERVAL`: 自动刷新间隔（秒）
+  - 默认值：20
+  - 建议范围：10-60秒
+
+**注意：** 修改 `.env` 文件后需要重启前端服务才能生效。
+
 ## 🎯 主要功能
 
 1. **实时监控**: 关键指标卡片展示

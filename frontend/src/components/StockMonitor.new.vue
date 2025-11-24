@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { NCard, NTabs, NTabPane, NSwitch, useMessage } from 'naive-ui'
 import axios from 'axios'
 import MetricCard from './MetricCard.vue'
@@ -113,30 +113,13 @@ const jingjiaDiefuData = ref([])
 const lianbanData = ref([])
 const loading = ref(false)
 const autoRefresh = ref(true)
-
-// 从环境变量读取自动刷新间隔时间（秒），默认20秒
-const REFRESH_INTERVAL = Number(import.meta.env.VITE_AUTO_REFRESH_INTERVAL) || 20
-const countdown = ref(REFRESH_INTERVAL)
-
-const selectedDate = ref('')
+const countdown = ref(20)
+const selectedDate = ref(null)
 const tradeDates = ref([])
 const queryDate = ref('')
 
+let refreshTimer = null
 let countdownTimer = null
-
-// 监听自动刷新开关变化
-watch(autoRefresh, (newValue) => {
-  if (newValue) {
-    // 开启自动刷新，重新启动定时器
-    startAutoRefresh()
-  } else {
-    // 关闭自动刷新，清除定时器
-    if (countdownTimer) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
-    }
-  }
-})
 
 // 获取交易日期
 const fetchTradeDates = async () => {
@@ -144,11 +127,6 @@ const fetchTradeDates = async () => {
     const response = await axios.get('/api/trade-dates')
     if (response.data.success) {
       tradeDates.value = response.data.data
-      // 默认选择当前交易日
-      if (response.data.current_date && !selectedDate.value) {
-        selectedDate.value = response.data.current_date
-        queryDate.value = response.data.current_date
-      }
     }
   } catch (error) {
     console.error('获取交易日期失败:', error)
@@ -242,14 +220,10 @@ const getNextTradeDate = () => {
   
   const currentIndex = tradeDates.value.findIndex(d => d.raw === selectedDate.value)
   
-  // tradeDates数组是从新到旧排序（降序），所以下一交易日在前面（index - 1）
-  // 例如: [20251124(新), 20251122, 20251121(旧)]
-  // 选择20251121(index=2)，下一交易日是20251122(index=1)
   if (currentIndex > 0) {
     return tradeDates.value[currentIndex - 1].raw
   }
   
-  // 如果是最新的交易日(index=0)，则没有下一交易日
   return null
 }
 
@@ -269,10 +243,10 @@ const loadNextDayJingjiaData = async () => {
         })
         
         if (response.data.success) {
-          lianbanData.value[i]['次日竞价涨幅(%)'] = response.data.jingjiaZhangfu ?? ''
-          lianbanData.value[i]['次日竞价成交额(亿元)'] = response.data.jingjiaChengjiaoE ?? ''
-          lianbanData.value[i]['次日竞价成交量'] = response.data.jingjiaChengjiaoL ?? ''
-          lianbanData.value[i]['是否晋级'] = response.data.shifoujinjie ?? ''
+          lianbanData.value[i]['次日竞价涨幅(%)'] = response.data.jingjiaZhangfu || ''
+          lianbanData.value[i]['次日竞价成交额(亿元)'] = response.data.jingjiaChengjiaoE || ''
+          lianbanData.value[i]['次日竞价成交量'] = response.data.jingjiaChengjiaoL || ''
+          lianbanData.value[i]['是否晋级'] = response.data.shifoujinjie || ''
         } else {
           lianbanData.value[i]['次日竞价涨幅(%)'] = '❌'
           lianbanData.value[i]['次日竞价成交额(亿元)'] = '❌'
@@ -304,36 +278,40 @@ const initData = async () => {
   await fetchLianbanData()
 }
 
-// 启动自动刷新和倒计时
-const startAutoRefresh = () => {
-  // 清除旧的定时器
+// 启动倒计时
+const startCountdown = () => {
   if (countdownTimer) clearInterval(countdownTimer)
+  countdown.value = 20
   
-  // 重置倒计时
-  countdown.value = REFRESH_INTERVAL
-  
-  // 启动倒计时（每秒更新一次）
   countdownTimer = setInterval(() => {
-    if (autoRefresh.value) {
-      countdown.value--
-      
-      // 倒计时到0时刷新数据
-      if (countdown.value <= 0) {
-        countdown.value = REFRESH_INTERVAL
-        initData()
-      }
+    countdown.value--
+    if (countdown.value <= 0) {
+      countdown.value = 20
     }
   }, 1000)
+}
+
+// 启动自动刷新
+const startAutoRefresh = () => {
+  if (refreshTimer) clearInterval(refreshTimer)
+  
+  refreshTimer = setInterval(() => {
+    if (autoRefresh.value) {
+      initData()
+    }
+  }, 20000)
 }
 
 // 组件挂载
 onMounted(() => {
   initData()
+  startCountdown()
   startAutoRefresh()
 })
 
 // 组件卸载
 onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
   if (countdownTimer) clearInterval(countdownTimer)
 })
 </script>
