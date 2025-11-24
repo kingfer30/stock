@@ -1,7 +1,8 @@
 """主应用文件 - 注册所有路由"""
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 import urllib3
+import os
 
 # 导入所有路由蓝图
 from routes.trade_dates import trade_dates_bp
@@ -13,7 +14,10 @@ from routes.next_day_jingjia import next_day_jingjia_bp
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-app = Flask(__name__)
+# 静态文件目录（生产环境）
+static_folder = os.path.join(os.path.dirname(__file__), 'static')
+
+app = Flask(__name__, static_folder=static_folder, static_url_path='')
 CORS(app)  # 允许跨域请求
 
 # 注册所有蓝图
@@ -24,14 +28,31 @@ app.register_blueprint(max_volume_bp)
 app.register_blueprint(next_day_jingjia_bp)
 
 
-@app.route('/')
-def index():
-    """健康检查接口"""
-    return {
-        "status": "ok",
-        "message": "股市实时监控看板API服务运行中",
-        "version": "2.0.0"
-    }
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    """
+    serve静态文件（生产环境）或健康检查（开发环境）
+    """
+    # 如果是API请求，不处理（由蓝图处理）
+    if path.startswith('api/'):
+        return {"error": "Not found"}, 404
+    
+    # 如果static目录存在（生产环境）
+    if os.path.exists(static_folder):
+        if path != "" and os.path.exists(os.path.join(static_folder, path)):
+            return send_from_directory(static_folder, path)
+        else:
+            # SPA应用，返回index.html
+            return send_from_directory(static_folder, 'index.html')
+    else:
+        # 开发环境，返回API信息
+        return {
+            "status": "ok",
+            "message": "股市实时监控看板API服务运行中",
+            "version": "2.0.0",
+            "mode": "development"
+        }
 
 
 if __name__ == '__main__':

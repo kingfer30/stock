@@ -3,6 +3,9 @@
 
 # Shell 脚本使用 LF（Linux/Unix）行结束符
 *.sh text eol=lf
+start_debian.sh text eol=lf
+start_production.sh text eol=lf
+start_production_simple.sh text eol=lf
 
 # Windows 批处理脚本使用 CRLF 行结束符
 *.bat text eol=crlf

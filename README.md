@@ -22,9 +22,55 @@
 
 ## 快速开始
 
-### 方式一：Debian/Ubuntu 一键部署 ⭐️ 推荐
+### 方式一：简化生产部署 ⭐ 推荐
 
-适用于 Debian 10+ / Ubuntu 18.04+ 系统：
+**适用场景**: 通过 IP:端口 直接访问，无需域名
+
+```bash
+# 赋予执行权限
+chmod +x start_production_simple.sh
+
+# 一键部署
+./start_production_simple.sh deploy
+```
+
+访问地址: `http://your-server-ip:8000`
+
+特性：
+- ✅ 简单快速，一键部署
+- ✅ 无需Nginx和域名
+- ✅ 支持外网访问
+- ✅ Gunicorn生产级服务器
+- ✅ Vue生产模式构建
+- ✅ 可选systemd服务管理
+
+详细说明请查看 [简化生产部署指南](PRODUCTION_SIMPLE.md)
+
+### 方式二：完整生产部署 🚀 企业级
+
+**适用场景**: 需要域名、HTTPS、高并发
+
+```bash
+# 赋予执行权限
+chmod +x start_production.sh
+
+# 一键部署（需要root权限）
+sudo ./start_production.sh deploy
+```
+
+特性：
+- ✅ Nginx反向代理和静态文件服务
+- ✅ 支持域名和HTTPS
+- ✅ 高性能和高并发支持
+- ✅ 完善的缓存和压缩
+- ✅ systemd服务管理
+- ✅ 生产级安全性
+
+详细说明请查看 [完整生产环境部署指南](PRODUCTION_DEPLOY.md)
+
+### 方式三：开发环境 - Debian/Ubuntu
+
+适用于开发和测试：
 
 ```bash
 # 赋予执行权限
@@ -36,7 +82,7 @@ chmod +x start_debian.sh
 
 详细说明请查看 [Debian 部署指南](DEBIAN_INSTALL.md)
 
-### 方式二：Windows 一键启动
+### 方式四：Windows 一键启动
 
 双击运行 `start.bat` 文件，或在命令行执行：
 
@@ -46,7 +92,7 @@ start.bat
 
 详细说明请查看 [快速入门指南](QUICKSTART.md)
 
-### 方式三：手动启动
+### 方式五：手动启动
 
 #### 后端启动
 
@@ -67,6 +113,29 @@ npm run dev
 ```
 
 前端服务地址: http://localhost:3000
+
+## 部署方式对比
+
+| 特性 | 简化生产 | 完整生产 | 开发环境 | Windows |
+|------|---------|---------|---------|---------|
+| 脚本 | `start_production_simple.sh` | `start_production.sh` | `start_debian.sh` | `start.bat` |
+| Web服务器 | Gunicorn | Nginx + Gunicorn | Vite Dev | Vite Dev |
+| 前端模式 | Build | Build | Dev | Dev |
+| 访问方式 | IP:端口 | 域名/IP | localhost | localhost |
+| 外网访问 | ✅ 支持 | ✅ 支持 | ❌ | ❌ |
+| HTTPS | ❌ | ✅ 支持 | ❌ | ❌ |
+| 性能 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| 并发能力 | 50-100 | 200+ | 10-50 | 10-50 |
+| 自动重启 | ✅ 可选 | ✅ systemd | ❌ | ❌ |
+| 日志管理 | ✅ 完善 | ✅ 完善 | ⚠️ 基础 | ⚠️ 基础 |
+| 部署难度 | ⭐ 简单 | ⭐⭐ 中等 | ⭐ 简单 | ⭐ 简单 |
+| 需要权限 | 可选 | Root | 普通 | 普通 |
+| 适用场景 | 小型生产 | 企业生产 | 开发测试 | 本地开发 |
+
+**推荐选择**：
+- ⭐ **小型项目/内部系统**: 使用 `start_production_simple.sh`
+- 🚀 **企业级项目**: 使用 `start_production.sh`
+- 🔧 **开发测试**: 使用 `start_debian.sh` 或 `start.bat`
 
 ## 环境配置
 
