@@ -301,7 +301,21 @@ const handleDateChange = async () => {
 const initData = async () => {
   await fetchTradeDates()
   await fetchMarketData()
-  await fetchLianbanData()
+  
+  // 只有当选择的是当前交易日时，才刷新连板数据
+  if (isCurrentTradeDate()) {
+    await fetchLianbanData()
+  }
+}
+
+// 判断是否为当前交易日（下拉框中带"(当前)"标记的）
+const isCurrentTradeDate = () => {
+  if (!selectedDate.value || tradeDates.value.length === 0) {
+    return true // 没有选择日期时，默认是当前
+  }
+  // 查找选择的日期是否有 is_current 标记
+  const currentDate = tradeDates.value.find(d => d.raw === selectedDate.value)
+  return currentDate?.is_current === true
 }
 
 // 启动自动刷新和倒计时
