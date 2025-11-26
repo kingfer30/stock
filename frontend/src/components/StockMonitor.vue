@@ -84,6 +84,13 @@
         </n-tab-pane>
       </n-tabs>
     </n-card>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <span class="footer-content">
+        🌍 @aichat199
+      </span>
+    </div>
   </div>
 </template>
 
@@ -429,6 +436,21 @@ onUnmounted(() => {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.footer {
+  margin-top: 40px;
+  padding: 20px;
+  text-align: center;
+}
+
+.footer-content {
+  color: #666;
+  font-size: 14px;
+  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 </style>
 
