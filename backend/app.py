@@ -1,8 +1,9 @@
 """主应用文件 - 注册所有路由"""
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
 import urllib3
 import os
+from datetime import datetime
 
 # 导入所有路由蓝图
 from routes.trade_dates import trade_dates_bp
@@ -20,6 +21,22 @@ static_folder = os.path.join(os.path.dirname(__file__), 'static')
 
 app = Flask(__name__, static_folder=static_folder, static_url_path='')
 CORS(app)  # 允许跨域请求
+
+
+# 检查程序有效期
+@app.before_request
+def check_expiration():
+    """检查程序是否过期（仅对API接口生效）"""
+    # 只对 /api/ 路径进行检查
+    if request.path.startswith('/api/'):
+        expire_date = datetime(2026, 12, 31, 23, 59, 59)
+        now = datetime.now()
+        if now > expire_date:
+            return jsonify({
+                "success": False,
+                "error": "程序已过期，请联系开发者更新"
+            }), 403
+
 
 # 注册所有蓝图
 app.register_blueprint(trade_dates_bp)

@@ -348,6 +348,14 @@ const startAutoRefresh = () => {
 
 // 组件挂载
 onMounted(async () => {
+  // 检查运行期限
+  const now = new Date()
+  const expireDate = new Date('2026-12-31T23:59:59')
+  if (now > expireDate) {
+    message.error('程序已过期，请联系开发者更新')
+    throw new Error('Program expired')
+  }
+  
   // 首先获取配置
   await fetchConfig()
   // 然后初始化数据
