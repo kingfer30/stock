@@ -23,6 +23,9 @@ backend/static/
 .idea/
 *.swp
 *.swo
+*.bak
+*.new.vue
+*.old
 
 # Logs
 *.log
