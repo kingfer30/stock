@@ -244,7 +244,7 @@ const exportToExcel = () => {
   props.data.forEach(row => {
     const rowData = [
       row['连板数'] || '',
-      row['股票代码'] || '',
+      row['股票代码'] || '', // 股票代码（会在后面特殊处理）
       row['股票简称'] || '',
       row['成交额(亿元)'] || '',
       row['封板资金(亿元)'] || '',
@@ -261,9 +261,18 @@ const exportToExcel = () => {
       row['是否晋级'] === 'loading' ? '-' : (row['是否晋级'] || '')
     ]
     
-    // 处理包含逗号或双引号的字段
-    const processedData = rowData.map(field => {
+    // 处理包含逗号或双引号的字段，并对股票代码特殊处理
+    const processedData = rowData.map((field, index) => {
       const fieldStr = String(field)
+      
+      // 特殊处理股票代码（第2列，索引1），防止Excel去掉前导0
+      // 例如：002345 会被处理为 "=""002345"""
+      // Excel打开时会解析为公式 ="002345"，显示为文本 002345（保留前导0）
+      if (index === 1 && fieldStr) {
+        return `"=""${fieldStr}"""`
+      }
+      
+      // 常规字段处理
       if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
         return `"${fieldStr.replace(/"/g, '""')}"`
       }

@@ -92,7 +92,29 @@ start.bat
 
 详细说明请查看 [快速入门指南](QUICKSTART.md)
 
-### 方式五：手动启动
+### 方式五：打包为EXE（Windows）
+
+**适用场景**: 无需安装依赖，双击即可运行
+
+```cmd
+# 一键打包
+build_exe.bat
+
+# 或使用高级版本
+build_exe_advanced.bat
+```
+
+生成文件: `股票监控系统.exe` (40-60MB)
+
+特性：
+- ✅ 单文件，无需安装
+- ✅ 自动打开浏览器
+- ✅ 包含所有依赖
+- ✅ 易于分发
+
+详细说明请查看 [EXE打包指南](BUILD_EXE_README.md)
+
+### 方式六：手动启动
 
 #### 后端启动
 
@@ -116,23 +138,24 @@ npm run dev
 
 ## 部署方式对比
 
-| 特性 | 简化生产 | 完整生产 | 开发环境 | Windows |
-|------|---------|---------|---------|---------|
-| 脚本 | `start_production_simple.sh` | `start_production.sh` | `start_debian.sh` | `start.bat` |
-| Web服务器 | Gunicorn | Nginx + Gunicorn | Vite Dev | Vite Dev |
-| 前端模式 | Build | Build | Dev | Dev |
-| 访问方式 | IP:端口 | 域名/IP | localhost | localhost |
-| 外网访问 | ✅ 支持 | ✅ 支持 | ❌ | ❌ |
-| HTTPS | ❌ | ✅ 支持 | ❌ | ❌ |
-| 性能 | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
-| 并发能力 | 50-100 | 200+ | 10-50 | 10-50 |
-| 自动重启 | ✅ 可选 | ✅ systemd | ❌ | ❌ |
-| 日志管理 | ✅ 完善 | ✅ 完善 | ⚠️ 基础 | ⚠️ 基础 |
-| 部署难度 | ⭐ 简单 | ⭐⭐ 中等 | ⭐ 简单 | ⭐ 简单 |
-| 需要权限 | 可选 | Root | 普通 | 普通 |
-| 适用场景 | 小型生产 | 企业生产 | 开发测试 | 本地开发 |
+| 特性 | EXE打包 | 简化生产 | 完整生产 | 开发环境 | Windows开发 |
+|------|---------|---------|---------|---------|------------|
+| 脚本 | `build_exe.bat` | `start_production_simple.sh` | `start_production.sh` | `start_debian.sh` | `start.bat` |
+| 平台 | Windows | Linux | Linux | Linux | Windows |
+| Web服务器 | Flask | Gunicorn | Nginx + Gunicorn | Vite Dev | Vite Dev |
+| 前端模式 | Build | Build | Build | Dev | Dev |
+| 安装依赖 | ❌ 无需 | ✅ 需要 | ✅ 需要 | ✅ 需要 | ✅ 需要 |
+| 外网访问 | ❌ | ✅ 支持 | ✅ 支持 | ❌ | ❌ |
+| HTTPS | ❌ | ❌ | ✅ 支持 | ❌ | ❌ |
+| 性能 | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| 并发能力 | 10-30 | 50-100 | 200+ | 10-50 | 10-50 |
+| 文件大小 | 40-60MB | - | - | - | - |
+| 启动速度 | 2-3秒 | 快 | 快 | 快 | 快 |
+| 分发难度 | ⭐ 极简 | ⭐⭐ 简单 | ⭐⭐⭐ 中等 | ⭐ 简单 | ⭐ 简单 |
+| 适用场景 | 演示分发 | 小型生产 | 企业生产 | 开发测试 | 本地开发 |
 
 **推荐选择**：
+- 📦 **演示/分发给非技术人员**: 使用 `build_exe.bat`
 - ⭐ **小型项目/内部系统**: 使用 `start_production_simple.sh`
 - 🚀 **企业级项目**: 使用 `start_production.sh`
 - 🔧 **开发测试**: 使用 `start_debian.sh` 或 `start.bat`

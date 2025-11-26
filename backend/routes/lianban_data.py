@@ -84,18 +84,18 @@ def fetch_lianban_data():
                 current_count = len(tmp)
                 if total > current_count:
                     page = 2
-                    info = data_component.get("info", {})
                     
                     while current_count < total:
                         try:
                             page_response = requests.post(
                                 "https://ms.10jqka.com.cn/gateway/urp/v7/landing/getDataList",
                                 data={
+                                    "uuid":"23225",
+                                    "comp_id":"6605812",
                                     "query_type":"stock",
                                     "query": query,
                                     "perpage":15,
                                     "page": str(page),
-                                    "info": json.dumps(info) if info else ""
                                 },
                                 headers={
                                     "Host": "ms.10jqka.com.cn",
@@ -109,16 +109,16 @@ def fetch_lianban_data():
                             if page_response.status_code == 200:
                                 page_json = page_response.json()
                                 if page_json.get("status_code") == "0":
-                                    page_datas = page_json["data"]["datas"]
-                                    if not page_datas:
-                                        break
+                                    page_datas = page_json["answer"]["components"][0]["data"]
+                                    tm_sub = page_datas.get("datas", [])
                                     
-                                    for item in page_datas:
-                                        entry = process_lianban_item(item, query_date)
-                                        连板数据.append(entry)
+                                    if tm_sub:
+                                        for item in tm_sub:
+                                            entry = process_lianban_item(item, query_date)
+                                            连板数据.append(entry)
                                     
-                                    current_count += len(page_datas)
-                                    page += 1
+                                        current_count += len(tm_sub)
+                                        page += 1
                                 else:
                                     break
                             else:
