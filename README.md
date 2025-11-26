@@ -222,8 +222,9 @@ stock/
 ### 自动刷新
 
 - 系统默认每 20 秒自动刷新一次数据
-- 可通过环境变量 `VITE_AUTO_REFRESH_INTERVAL` 配置刷新间隔
+- 可通过 `config.json` 配置文件修改刷新间隔（详见 [配置指南](CONFIG_GUIDE.md)）
 - 可手动关闭自动刷新功能
+- **注意**: 连板数据不会自动刷新，需手动切换日期查询
 
 ## 常见问题
 
@@ -264,6 +265,14 @@ npm install
 前端使用 Naive UI 组件库，可通过以下方式自定义样式：
 - 修改组件的 `<style scoped>` 部分
 - 使用 `:deep()` 选择器修改组件库样式
+
+## 相关文档
+
+- 📖 [配置文件使用指南](CONFIG_GUIDE.md) - 如何修改刷新时间等配置
+- 📦 [EXE打包说明](BUILD_EXE_README.md) - Windows可执行文件打包
+- 🐧 [Debian部署指南](DEBIAN_INSTALL.md) - Linux系统部署
+- 🚀 [简化生产部署](PRODUCTION_SIMPLE.md) - IP:端口直接访问
+- 📋 [快速参考](QUICK_REFERENCE.md) - 常用命令速查
 
 ## 技术支持
 

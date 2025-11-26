@@ -86,6 +86,7 @@ echo         'routes.market_data',
 echo         'routes.lianban_data',
 echo         'routes.max_volume',
 echo         'routes.next_day_jingjia',
+echo         'routes.config',
 echo     ],
 echo     hookspath=[],
 echo     hooksconfig={},
@@ -152,6 +153,12 @@ if exist "backend\dist\股票监控系统.exe" (
         echo 1. 双击 "股票监控系统.exe" 启动程序
         echo 2. 程序会自动打开浏览器
         echo 3. 关闭命令窗口即可停止服务
+        echo.
+        echo 配置刷新时间:
+        echo - 首次运行会在EXE同目录自动创建 config.json
+        echo - 用记事本打开编辑 "auto_refresh_interval" 的值^(单位:秒^)
+        echo - 修改后重启程序即可生效
+        echo - 示例: "auto_refresh_interval": 30  ^(30秒刷新一次^)
         echo.
         echo 注意事项:
         echo - 首次运行可能需要防火墙授权

@@ -15,6 +15,9 @@ frontend/node_modules/
 frontend/dist/
 .DS_Store
 
+# Frontend build output (copied to backend)
+backend/static/
+
 # IDE
 .vscode/
 .idea/
@@ -30,4 +33,14 @@ yarn-error.log*
 # Environment
 .env
 .env.local
+
+# Build and distribution
 /dist_app
+backend/build/
+backend/dist/
+*.spec
+launcher.py
+
+# Runtime config
+config.json
+test_config.json

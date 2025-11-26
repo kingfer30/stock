@@ -114,8 +114,8 @@ const lianbanData = ref([])
 const loading = ref(false)
 const autoRefresh = ref(true)
 
-// 从环境变量读取自动刷新间隔时间（秒），默认20秒
-const REFRESH_INTERVAL = Number(import.meta.env.VITE_AUTO_REFRESH_INTERVAL) || 20
+// 自动刷新间隔时间（秒），默认20秒，将从后端配置接口获取
+let REFRESH_INTERVAL = Number(import.meta.env.VITE_AUTO_REFRESH_INTERVAL) || 20
 const countdown = ref(REFRESH_INTERVAL)
 
 const selectedDate = ref('')
@@ -123,6 +123,24 @@ const tradeDates = ref([])
 const queryDate = ref('')
 
 let countdownTimer = null
+
+// 获取配置
+const fetchConfig = async () => {
+  try {
+    const response = await axios.get('/api/config')
+    if (response.data.success) {
+      const config = response.data.config
+      // 更新刷新间隔时间
+      if (config.auto_refresh_interval) {
+        REFRESH_INTERVAL = config.auto_refresh_interval
+        countdown.value = REFRESH_INTERVAL
+        console.log(`✅ 已加载配置: 自动刷新间隔 ${REFRESH_INTERVAL} 秒`)
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ 获取配置失败，使用默认配置:', error.message)
+  }
+}
 
 // 监听自动刷新开关变化
 watch(autoRefresh, (newValue) => {
@@ -302,20 +320,8 @@ const initData = async () => {
   await fetchTradeDates()
   await fetchMarketData()
   
-  // 只有当选择的是当前交易日时，才刷新连板数据
-  if (isCurrentTradeDate()) {
-    await fetchLianbanData()
-  }
-}
-
-// 判断是否为当前交易日（下拉框中带"(当前)"标记的）
-const isCurrentTradeDate = () => {
-  if (!selectedDate.value || tradeDates.value.length === 0) {
-    return true // 没有选择日期时，默认是当前
-  }
-  // 查找选择的日期是否有 is_current 标记
-  const currentDate = tradeDates.value.find(d => d.raw === selectedDate.value)
-  return currentDate?.is_current === true
+  // 连板数据不自动刷新，只在用户手动切换日期时更新
+  // 如果需要加载连板数据，请在 onMounted 中单独调用 fetchLianbanData()
 }
 
 // 启动自动刷新和倒计时
@@ -341,8 +347,14 @@ const startAutoRefresh = () => {
 }
 
 // 组件挂载
-onMounted(() => {
-  initData()
+onMounted(async () => {
+  // 首先获取配置
+  await fetchConfig()
+  // 然后初始化数据
+  await initData()
+  // 首次加载时获取一次连板数据，之后自动刷新不再获取
+  await fetchLianbanData()
+  // 启动自动刷新
   startAutoRefresh()
 })
 

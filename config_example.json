@@ -1,0 +1,6 @@
+{
+  "auto_refresh_interval": 20,
+  "max_retries": 3,
+  "request_timeout": 10
+}
+

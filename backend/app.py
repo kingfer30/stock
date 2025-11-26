@@ -10,6 +10,7 @@ from routes.market_data import market_data_bp
 from routes.lianban_data import lianban_data_bp
 from routes.max_volume import max_volume_bp
 from routes.next_day_jingjia import next_day_jingjia_bp
+from routes.config import config_bp
 
 # 禁用SSL警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -26,6 +27,7 @@ app.register_blueprint(market_data_bp)
 app.register_blueprint(lianban_data_bp)
 app.register_blueprint(max_volume_bp)
 app.register_blueprint(next_day_jingjia_bp)
+app.register_blueprint(config_bp)
 
 
 @app.route('/', defaults={'path': ''})
