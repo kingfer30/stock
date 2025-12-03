@@ -31,9 +31,7 @@ def create_default_config():
     # 如果配置文件不存在，创建默认配置
     if not os.path.exists(config_file):
         default_config = {
-            "auto_refresh_interval": 20,
-            "max_retries": 3,
-            "request_timeout": 10
+            "auto_refresh_interval": 20
         }
         try:
             with open(config_file, 'w', encoding='utf-8') as f:

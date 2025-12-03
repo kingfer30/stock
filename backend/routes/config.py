@@ -26,9 +26,7 @@ def load_config():
     
     # 默认配置
     default_config = {
-        "auto_refresh_interval": 20,  # 自动刷新间隔（秒）
-        "max_retries": 3,             # 最大重试次数
-        "request_timeout": 10         # 请求超时时间（秒）
+        "auto_refresh_interval": 20  # 自动刷新间隔（秒）
     }
     
     # 如果配置文件存在，读取配置
@@ -68,9 +66,7 @@ def get_config():
             "success": False,
             "error": str(e),
             "config": {
-                "auto_refresh_interval": 20,
-                "max_retries": 3,
-                "request_timeout": 10
+                "auto_refresh_interval": 20
             }
         })
 
